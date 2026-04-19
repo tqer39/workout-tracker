@@ -1,2 +1,13 @@
 .superpowers/
 .DS_Store
+
+# Xcode
+*.xcodeproj
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+
+# XcodeGen
+*.generated.yml
