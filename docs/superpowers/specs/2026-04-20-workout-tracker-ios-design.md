@@ -91,7 +91,7 @@ SwiftUI + SwiftData + MV（Model–View）パターン。単純な一覧は `@Qu
 
 - セッション一覧（日付降順）
 - セッション詳細（セット明細）
-- 種目別グラフ: 重量の推移 / 1RM 推定値 / 総ボリュームを Swift Charts で描画
+- 種目別グラフ: 重量の推移 / 推定 1RM / 総ボリュームを Swift Charts で描画（推定 1RM は Epley 式: `weight × (1 + reps / 30)`）
 - 体組成タブ: 体重・体脂肪率の推移
 
 ## 5. データモデル（SwiftData）
@@ -106,6 +106,7 @@ SwiftUI + SwiftData + MV（Model–View）パターン。単純な一覧は `@Qu
   var name: String
   var category: ExerciseCategory   // 胸/脚/背/肩/腕/体幹/その他
   var defaultWeightKg: Double?
+  var defaultRestSeconds: Int      // 休憩タイマーの既定値（初期値 90）
   var notes: String?
   var isHidden: Bool               // プリセット非表示化フラグ
   // 関連
@@ -225,8 +226,10 @@ protocol HealthKitService {
 
 ### 7.4 体組成同期
 
-1. 起動時: `HealthKitService.fetchLatestBodyMetric()` を呼び、値があれば `BodyMetric(source: .healthKit)` として保存（同日重複は上書き）
-2. 手入力時: `BodyMetric(source: .manual)` を保存
+1. 起動時: `HealthKitService.fetchLatestBodyMetric()` を呼び、値があれば `BodyMetric(source: .healthKit)` として保存
+2. 重複排除: 同じ `recordedAt` の日付（暦日）かつ同じ `source` のレコードが既存なら UPSERT（最新値で上書き）。`manual` と `healthKit` は別レコードとして併存
+3. 手入力時: `BodyMetric(source: .manual)` を保存。ホーム/履歴のスパークラインは `manual` と `healthKit` を結合し同日は `manual` を優先して描画
+4. 体組成データが 0 件のとき: ホームのスパークラインは「データなし」のプレースホルダを表示
 
 ## 8. エラーハンドリング
 
