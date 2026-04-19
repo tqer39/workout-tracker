@@ -1,0 +1,55 @@
+name: WorkoutTracker
+options:
+  bundleIdPrefix: com.tqer39
+  deploymentTarget:
+    iOS: "18.0"
+  developmentLanguage: ja
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGNING_REQUIRED: "NO"
+    CODE_SIGNING_ALLOWED: "NO"
+targets:
+  WorkoutTracker:
+    type: application
+    platform: iOS
+    sources:
+      - path: WorkoutTracker
+    resources:
+      - path: WorkoutTracker/Resources/Assets.xcassets
+    info:
+      path: WorkoutTracker/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: 筋トレ記録
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        NSHealthShareUsageDescription: 体重・体脂肪率の推移をアプリに取り込みます。
+        NSHealthUpdateUsageDescription: 体重・体脂肪率をヘルスケアへ保存します。
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tqer39.WorkoutTracker
+  WorkoutTrackerTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: WorkoutTrackerTests
+    dependencies:
+      - target: WorkoutTracker
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tqer39.WorkoutTrackerTests
+schemes:
+  WorkoutTracker:
+    build:
+      targets:
+        WorkoutTracker: all
+        WorkoutTrackerTests: [test]
+    test:
+      targets:
+        - WorkoutTrackerTests
