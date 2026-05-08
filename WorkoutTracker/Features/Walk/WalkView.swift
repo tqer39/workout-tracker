@@ -5,6 +5,7 @@ struct WalkView: View {
     @AppStorage("walk.dailyGoalSteps") private var dailyGoal: Int = 8000
     @State private var lastCompanionLine: String?
     @State private var activeCelebration: CheckpointAchievement?
+    @State private var showingHistory: Bool = false
 
     private var timeOfDay: TimeOfDay { .from(Date()) }
 
@@ -50,6 +51,16 @@ struct WalkView: View {
                 }
             }
             .navigationTitle("旅")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showingHistory = true } label: {
+                        Image(systemName: "chart.bar")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingHistory) {
+                StepHistoryView()
+            }
             .task {
                 await journey.refreshOnAppear()
                 journey.startObserving()
