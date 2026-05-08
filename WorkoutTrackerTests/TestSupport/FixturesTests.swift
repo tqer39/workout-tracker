@@ -48,5 +48,16 @@ final class FixturesTests: XCTestCase {
         XCTAssertEqual(achievements.map(\.checkpointId),
                        ["tokyo", "yokohama", "atami", "shizuoka"])
     }
+
+    func test_seededContainer_holdsInsertedRecords() throws {
+        let container = try InMemoryContainer.seeded { ctx in
+            for (i, n) in Fixtures.varietyWeek.enumerated() {
+                ctx.insert(Fixtures.stepRecord(n, daysAgo: i))
+            }
+        }
+        let descriptor = FetchDescriptor<StepDailyRecord>()
+        let records = try container.mainContext.fetch(descriptor)
+        XCTAssertEqual(records.count, 7)
+    }
 }
 #endif
