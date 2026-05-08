@@ -104,8 +104,5 @@ struct WalkView: View {
 
 #Preview {
     WalkView()
-        .environment(JourneyService(
-            healthKit: LiveHealthKitService(),
-            container: ModelContainerFactory.makeShared()
-        ))
+        .environment(JourneyService.preview())
 }

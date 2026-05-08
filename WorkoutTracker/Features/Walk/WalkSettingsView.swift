@@ -71,8 +71,5 @@ struct WalkSettingsView: View {
 
 #Preview {
     WalkSettingsView()
-        .environment(JourneyService(
-            healthKit: LiveHealthKitService(),
-            container: ModelContainerFactory.makeShared()
-        ))
+        .environment(JourneyService.preview())
 }

@@ -135,8 +135,5 @@ struct SummaryTile: View {
             WorkoutSession.self, SetRecord.self, Exercise.self, BodyMetric.self,
             StepDailyRecord.self, CheckpointAchievement.self
         ], inMemory: true)
-        .environment(JourneyService(
-            healthKit: LiveHealthKitService(),
-            container: ModelContainerFactory.makeShared()
-        ))
+        .environment(JourneyService.preview())
 }
