@@ -23,7 +23,7 @@
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
 
 # Thumbnails
 ._*
@@ -176,6 +176,7 @@ $RECYCLE.BIN/
 # Custom rules
 .superpowers/
 .DS_Store
+.envrc
 
 # Xcode
 *.xcodeproj

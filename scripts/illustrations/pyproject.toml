@@ -1,0 +1,12 @@
+[project]
+name = "illustrations"
+version = "0.1.0"
+description = "WorkoutTracker watercolor illustration generator (gpt-image-1)"
+requires-python = ">=3.12"
+dependencies = [
+    "openai>=1.50.0",
+    "pillow>=10.0.0",
+]
+
+[tool.uv]
+package = false
