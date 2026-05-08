@@ -4,6 +4,7 @@ struct WalkView: View {
     @Environment(JourneyService.self) private var journey
     @AppStorage("walk.dailyGoalSteps") private var dailyGoal: Int = 8000
     @State private var lastCompanionLine: String?
+    @State private var activeCelebration: CheckpointAchievement?
 
     private var timeOfDay: TimeOfDay { .from(Date()) }
 
@@ -52,11 +53,28 @@ struct WalkView: View {
             .task {
                 await journey.refreshOnAppear()
                 journey.startObserving()
+                presentNextCelebrationIfNeeded()
+            }
+            .onChange(of: journey.pendingCelebrations.count) { _, _ in
+                presentNextCelebrationIfNeeded()
             }
             .onDisappear {
                 journey.stopObserving()
             }
+            .fullScreenCover(item: $activeCelebration) { ach in
+                if let cp = JourneyRoute.tokyoToHakata.first(where: { $0.id == ach.checkpointId }) {
+                    CelebrationOverlay(achievement: ach, checkpoint: cp) {
+                        journey.markCelebrated(ach)
+                        activeCelebration = nil
+                    }
+                }
+            }
         }
+    }
+
+    private func presentNextCelebrationIfNeeded() {
+        guard activeCelebration == nil else { return }
+        activeCelebration = journey.pendingCelebrations.first
     }
 }
 
