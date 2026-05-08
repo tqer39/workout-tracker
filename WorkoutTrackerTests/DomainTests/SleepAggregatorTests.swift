@@ -2,10 +2,16 @@ import XCTest
 @testable import WorkoutTracker
 
 final class SleepAggregatorTests: XCTestCase {
+    private let cal = Calendar(identifier: .gregorian)
+
     private func date(_ y: Int, _ m: Int, _ d: Int, _ h: Int, _ min: Int) -> Date {
         var c = DateComponents()
         c.year = y; c.month = m; c.day = d; c.hour = h; c.minute = min
-        return Calendar(identifier: .gregorian).date(from: c)!
+        return cal.date(from: c)!
+    }
+
+    func test_empty_samples_returns_empty() {
+        XCTAssertTrue(SleepAggregator.aggregate(samples: []).isEmpty)
     }
 
     func test_single_night_simple_sum() {
@@ -16,12 +22,12 @@ final class SleepAggregatorTests: XCTestCase {
                 isAsleep:  true
             )
         ]
-        let result = SleepAggregator.aggregate(samples: samples)
+        let result = SleepAggregator.aggregate(samples: samples, calendar: cal)
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].totalMinutes, 7 * 60)
         XCTAssertEqual(
             result[0].dayStart,
-            Calendar.current.startOfDay(for: date(2026, 5, 8, 6, 0))
+            cal.startOfDay(for: date(2026, 5, 8, 6, 0))
         )
     }
 
@@ -69,11 +75,11 @@ final class SleepAggregatorTests: XCTestCase {
                 isAsleep:  true
             )
         ]
-        let result = SleepAggregator.aggregate(samples: samples)
+        let result = SleepAggregator.aggregate(samples: samples, calendar: cal)
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(
             result[0].dayStart,
-            Calendar.current.startOfDay(for: date(2026, 5, 8, 6, 0))
+            cal.startOfDay(for: date(2026, 5, 8, 6, 0))
         )
     }
 
