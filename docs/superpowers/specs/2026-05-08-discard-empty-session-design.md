@@ -61,7 +61,7 @@ func endSession() {
 
 - `restTimer.cancel()` と通知キャンセルは破棄時にも実行する。0 セット終了時は通常 `addSet` が呼ばれていないため実行中タイマーは無いはずだが、安全のため両分岐で呼ぶ。
 - `ctx.delete(session)` は SwiftData の cascade ルール（`@Relationship(deleteRule: .cascade, inverse: \SetRecord.session)`）により付随する `SetRecord` も同時に消す。本ケースは 0 件なので実害はないが、整合性として記述しておく。
-- `templateRef` は弱参照のため、テンプレ起動セッションを破棄してもテンプレート自体は影響を受けない。
+- `templateRef` は cascade 関係でないため、テンプレ起動セッションを破棄してもテンプレート自体は影響を受けない。
 
 ### UI 側の変更
 
@@ -69,24 +69,24 @@ func endSession() {
 
 ## テスト
 
-`WorkoutTrackerTests/` 配下に `RecordingViewModelTests.swift` を新規作成（既存に同名があれば追記）。
+`WorkoutTrackerTests/FeaturesTests/RecordingViewModelTests.swift` を新規作成する。既存テストに ViewModel 系の置き場が無いため `FeaturesTests/` ディレクトリを新設する（`project.yml` の `WorkoutTrackerTests` ターゲットは `path: WorkoutTrackerTests` で配下を再帰的に拾うため設定変更は不要）。
+
+各テストは `@MainActor` 上で `TestHelpers/InMemoryContainer.make()` から `ModelContainer` を作り、`mainContext` を `RecordingViewModel.bind(context:)` に渡す（既存 `SeedServiceTests` と同じパターン）。
 
 ケース 1: `test_endSession_withZeroSets_deletesSession`
 
 - `startEmptySession()` 後ただちに `endSession()` を呼ぶ
-- `ModelContext` で `WorkoutSession` を fetch すると 0 件であること
+- `ctx.fetch(FetchDescriptor<WorkoutSession>())` が 0 件であること
 
 ケース 2: `test_endSession_withOneOrMoreSets_persistsSessionWithEndedAt`
 
-- セッション開始 → `addSet(...)` を 1 件 → `endSession()`
+- 任意の `Exercise` を 1 件 insert → `startEmptySession()` → `addSet(...)` を 1 回 → `endSession()`
 - `WorkoutSession` が 1 件残り、`endedAt != nil`、`sets.count == 1` であること
 
 ケース 3: `test_endSession_withZeroSetsFromTemplate_deletesSession`
 
-- `startSession(from: template)` 後すぐ `endSession()`
+- `WorkoutTemplate` を 1 件 insert → `startSession(from: template)` → 即 `endSession()`
 - セッションは削除され、テンプレート自体は残ること
-
-`ModelContainerFactory` のインメモリコンテナ生成 API（既存）を利用してテストを構成する。
 
 ## 受け入れ基準
 

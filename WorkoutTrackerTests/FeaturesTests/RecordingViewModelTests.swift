@@ -71,7 +71,7 @@ final class RecordingViewModelTests: XCTestCase {
         )
         XCTAssertEqual(
             try ctx.fetch(FetchDescriptor<WorkoutTemplate>()).count, 1,
-            "テンプレート自体は残る（templateRef は弱参照）"
+            "テンプレート自体は残る（templateRef は cascade 関係でない）"
         )
         XCTAssertNil(vm.session)
     }
