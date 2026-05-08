@@ -46,4 +46,33 @@ final class RecordingViewModelTests: XCTestCase {
         XCTAssertEqual(sessions[0].sets.count, 1)
         XCTAssertNil(vm.session)
     }
+
+    func test_endSession_withZeroSetsFromTemplate_deletesSessionButKeepsTemplate() throws {
+        let container = try InMemoryContainer.make()
+        let ctx = container.mainContext
+
+        let template = WorkoutTemplate(name: "胸の日")
+        ctx.insert(template)
+        try ctx.save()
+
+        let vm = RecordingViewModel()
+        vm.bind(context: ctx)
+        vm.startSession(from: template)
+        XCTAssertEqual(
+            try ctx.fetch(FetchDescriptor<WorkoutSession>()).count, 1,
+            "前提: テンプレ起動でセッションが 1 件 insert される"
+        )
+
+        vm.endSession()
+
+        XCTAssertEqual(
+            try ctx.fetch(FetchDescriptor<WorkoutSession>()).count, 0,
+            "テンプレ起動でも 0 セットなら破棄される"
+        )
+        XCTAssertEqual(
+            try ctx.fetch(FetchDescriptor<WorkoutTemplate>()).count, 1,
+            "テンプレート自体は残る（templateRef は弱参照）"
+        )
+        XCTAssertNil(vm.session)
+    }
 }
