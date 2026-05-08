@@ -11,6 +11,8 @@ struct RootView: View {
                 .tabItem { Label("メニュー", systemImage: "list.bullet") }
             HistoryView()
                 .tabItem { Label("履歴", systemImage: "chart.line.uptrend.xyaxis") }
+            WalkView()
+                .tabItem { Label("旅", systemImage: "map") }
         }
     }
 }
