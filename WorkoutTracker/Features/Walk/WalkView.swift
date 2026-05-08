@@ -30,7 +30,7 @@ struct WalkView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                TimeOfDayBackground(timeOfDay: timeOfDay)
+                TimeOfDayScenery(timeOfDay: timeOfDay)
                     .frame(height: 220)
 
                 ScrollView {
