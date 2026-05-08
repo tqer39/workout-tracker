@@ -175,3 +175,32 @@ final class JourneyService {
         pendingCelebrations = (try? ctx.fetch(fd)) ?? []
     }
 }
+
+#if DEBUG
+extension JourneyService {
+    func debugAddSteps(_ n: Int) {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        var fd = FetchDescriptor<StepDailyRecord>(
+            predicate: #Predicate { $0.dayStart == today }
+        )
+        fd.fetchLimit = 1
+        let ctx = container.mainContext
+        if let existing = try? ctx.fetch(fd).first {
+            existing.steps += n
+            existing.lastSyncedAt = Date()
+        } else {
+            ctx.insert(StepDailyRecord(
+                dayStart: today, steps: n, source: .seed, lastSyncedAt: Date()
+            ))
+        }
+        try? ctx.save()
+        todaySteps += n
+        let started = cal.startOfDay(for: journeyStartedAtProvider() ?? today)
+        let total = sumSteps(from: started, to: today)
+        progress = JourneyEngine.computeProgress(totalSteps: total, route: route)
+        ensureAchievements(totalSteps: total)
+        refreshPendingCelebrations()
+    }
+}
+#endif

@@ -31,6 +31,21 @@ struct WalkSettingsView: View {
                         Label("旅の進行をリセット", systemImage: "arrow.counterclockwise")
                     }
                 }
+
+#if DEBUG
+                Section("DEBUG") {
+                    Button {
+                        journey.debugAddSteps(1000)
+                    } label: {
+                        Label("歩数 +1,000", systemImage: "plus.circle")
+                    }
+                    Button {
+                        journey.debugAddSteps(30_000)
+                    } label: {
+                        Label("歩数 +30,000（1 都市進む）", systemImage: "forward.fill")
+                    }
+                }
+#endif
             }
             .navigationTitle("設定")
             .navigationBarTitleDisplayMode(.inline)
