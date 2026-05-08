@@ -24,4 +24,26 @@ final class RecordingViewModelTests: XCTestCase {
         )
         XCTAssertNil(vm.session)
     }
+
+    func test_endSession_withOneOrMoreSets_persistsSessionWithEndedAt() throws {
+        let container = try InMemoryContainer.make()
+        let ctx = container.mainContext
+
+        let exercise = Exercise(name: "ベンチプレス", category: .chest)
+        ctx.insert(exercise)
+        try ctx.save()
+
+        let vm = RecordingViewModel()
+        vm.bind(context: ctx)
+        vm.startEmptySession()
+        vm.addSet(exercise: exercise, weightKg: 60.0, reps: 10, rpe: 8.0)
+
+        vm.endSession()
+
+        let sessions = try ctx.fetch(FetchDescriptor<WorkoutSession>())
+        XCTAssertEqual(sessions.count, 1, "セットがあれば破棄されない")
+        XCTAssertNotNil(sessions[0].endedAt, "endedAt が立っている")
+        XCTAssertEqual(sessions[0].sets.count, 1)
+        XCTAssertNil(vm.session)
+    }
 }
