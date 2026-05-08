@@ -52,4 +52,21 @@ final class SleepServiceTests: XCTestCase {
 
         XCTAssertNil(svc.lastNightMinutes)
     }
+
+    func test_refreshOnAppear_upserts_today_records_from_recent_window() async throws {
+        let container = try InMemoryContainer.make()
+        let today = Calendar.current.startOfDay(for: Date())
+        let stub = StubHealthKitService(latest: nil, range: [], sleepData: [])
+        let svc = SleepService(healthKit: stub, container: container)
+
+        await svc.bootstrap()
+
+        stub.sleepData = [.init(dayStart: today, totalMinutes: 420, source: .healthKit)]
+        await svc.refreshOnAppear()
+
+        XCTAssertEqual(svc.lastNightMinutes, 420)
+        let stored = try container.mainContext.fetch(FetchDescriptor<SleepDailyRecord>())
+        XCTAssertEqual(stored.count, 1)
+        XCTAssertEqual(stored.first?.totalMinutes, 420)
+    }
 }

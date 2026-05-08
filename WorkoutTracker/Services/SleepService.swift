@@ -28,7 +28,8 @@ final class SleepService {
     func refreshOnAppear() async {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
-        let dtos = (try? await healthKit.fetchSleep(from: today, to: today)) ?? []
+        let yesterday = cal.date(byAdding: .day, value: -1, to: today) ?? today
+        let dtos = (try? await healthKit.fetchSleep(from: yesterday, to: today)) ?? []
         upsert(dtos: dtos)
         lastNightMinutes = latestStoredMinutes()
     }
