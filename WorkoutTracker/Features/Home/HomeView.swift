@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct HomeView: View {
+    @Binding var tabSelection: AppTab
     @Environment(JourneyService.self) private var journey
     @AppStorage("walk.dailyGoalSteps") private var dailyGoal: Int = 8000
 
@@ -129,7 +130,7 @@ struct SummaryTile: View {
 }
 
 #Preview {
-    HomeView()
+    HomeView(tabSelection: .constant(.home))
         .modelContainer(for: [
             WorkoutSession.self, SetRecord.self, Exercise.self, BodyMetric.self,
             StepDailyRecord.self, CheckpointAchievement.self
