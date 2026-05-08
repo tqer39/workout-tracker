@@ -52,7 +52,7 @@ struct WalkView: View {
                     .padding(.bottom, 16)
                 }
             }
-            .navigationTitle("旅")
+            .navigationTitle("歩く")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showingHistory = true } label: {
