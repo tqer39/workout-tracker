@@ -21,7 +21,7 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>体重・体脂肪率の推移をアプリに取り込みます。</string>
+	<string>体重・体脂肪率・歩数の推移をアプリに取り込みます。</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>体重・体脂肪率をヘルスケアへ保存します。</string>
 	<key>UIApplicationSceneManifest</key>

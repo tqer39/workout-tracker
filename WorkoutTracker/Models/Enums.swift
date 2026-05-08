@@ -17,3 +17,22 @@ enum BodyMetricSource: String, Codable {
     case healthKit
     case manual
 }
+
+enum StepSource: String, Codable {
+    case healthKit
+    case seed
+}
+
+enum TimeOfDay: String, CaseIterable {
+    case morning, day, evening, night
+
+    static func from(_ date: Date, calendar: Calendar = .current) -> TimeOfDay {
+        let hour = calendar.component(.hour, from: date)
+        switch hour {
+        case 5..<11:  return .morning
+        case 11..<16: return .day
+        case 16..<19: return .evening
+        default:      return .night
+        }
+    }
+}

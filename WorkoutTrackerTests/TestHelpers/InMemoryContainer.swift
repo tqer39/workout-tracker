@@ -12,6 +12,8 @@ enum InMemoryContainer {
             WorkoutSession.self,
             SetRecord.self,
             BodyMetric.self,
+            StepDailyRecord.self,
+            CheckpointAchievement.self,
         ])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: [config])
