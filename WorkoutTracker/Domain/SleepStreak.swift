@@ -8,8 +8,9 @@ enum SleepStreak {
         calendar: Calendar = .current
     ) -> Int {
         let todayStart = calendar.startOfDay(for: today)
-        let byDay = Dictionary(uniqueKeysWithValues:
-            records.map { (calendar.startOfDay(for: $0.dayStart), $0.totalMinutes) }
+        let byDay = Dictionary(
+            records.map { (calendar.startOfDay(for: $0.dayStart), $0.totalMinutes) },
+            uniquingKeysWith: { a, b in max(a, b) }
         )
 
         var cursor = todayStart

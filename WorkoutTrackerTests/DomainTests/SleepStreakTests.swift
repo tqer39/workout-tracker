@@ -55,4 +55,26 @@ final class SleepStreakTests: XCTestCase {
         )
         XCTAssertEqual(streak, 2)
     }
+
+    func test_empty_records_returns_zero() {
+        let streak = SleepStreak.currentStreak(
+            records: [], targetMinutes: 420, today: day(2026, 5, 8), calendar: cal
+        )
+        XCTAssertEqual(streak, 0)
+    }
+
+    func test_records_with_offset_dayStart_are_normalized_without_crash() {
+        let today = day(2026, 5, 8)
+        let offset1 = cal.date(byAdding: .hour, value: 3, to: day(2026, 5, 7))!
+        let offset2 = cal.date(byAdding: .hour, value: 9, to: day(2026, 5, 7))!
+        let records = [
+            record(offset1, 460),
+            record(offset2, 480),
+            record(today, 470),
+        ]
+        let streak = SleepStreak.currentStreak(
+            records: records, targetMinutes: 420, today: today, calendar: cal
+        )
+        XCTAssertEqual(streak, 2)
+    }
 }
