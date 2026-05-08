@@ -3,17 +3,21 @@ import SwiftData
 
 struct RecordingView: View {
     @Environment(\.modelContext) private var ctx
+    @Environment(SleepService.self) private var sleep
     @State private var vm = RecordingViewModel()
     @Query(sort: [SortDescriptor(\WorkoutTemplate.order), SortDescriptor(\WorkoutTemplate.name)])
     private var templates: [WorkoutTemplate]
 
     var body: some View {
         NavigationStack {
-            Group {
-                if let session = vm.session {
-                    ActiveSessionView(session: session, vm: vm)
-                } else {
-                    startView
+            VStack(spacing: 0) {
+                sleepHeader
+                Group {
+                    if let session = vm.session {
+                        ActiveSessionView(session: session, vm: vm)
+                    } else {
+                        startView
+                    }
                 }
             }
             .navigationTitle("記録")
@@ -21,6 +25,20 @@ struct RecordingView: View {
         .onAppear {
             vm.bind(context: ctx)
             Task { await NotificationService.shared.requestAuthorizationIfNeeded() }
+        }
+    }
+
+    @ViewBuilder
+    private var sleepHeader: some View {
+        if let m = sleep.lastNightMinutes {
+            Text(String(format: "昨夜 %.1f h", Double(m) / 60.0))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.top, 4)
+        } else {
+            EmptyView()
         }
     }
 
@@ -57,6 +75,11 @@ struct RecordingView: View {
     RecordingView()
         .modelContainer(for: [
             Exercise.self, WorkoutSession.self, SetRecord.self,
-            WorkoutTemplate.self, TemplateExercise.self
+            WorkoutTemplate.self, TemplateExercise.self,
+            SleepDailyRecord.self
         ], inMemory: true)
+        .environment(SleepService(
+            healthKit: LiveHealthKitService(),
+            container: ModelContainerFactory.makeShared()
+        ))
 }

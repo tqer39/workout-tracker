@@ -3,7 +3,9 @@ import SwiftData
 
 struct HomeView: View {
     @Environment(JourneyService.self) private var journey
+    @Environment(SleepService.self) private var sleep
     @AppStorage("walk.dailyGoalSteps") private var dailyGoal: Int = 8000
+    @AppStorage("sleep.targetHours") private var sleepTargetHours: Double = 7.0
 
     @Query(sort: [SortDescriptor(\WorkoutSession.startedAt, order: .reverse)])
     private var sessions: [WorkoutSession]
@@ -16,6 +18,10 @@ struct HomeView: View {
             List {
                 Section("今日の歩数") {
                     todayWalkCard
+                }
+
+                Section("昨夜の睡眠") {
+                    lastNightSleepCard
                 }
 
                 Section("今週のサマリ") {
@@ -96,6 +102,48 @@ struct HomeView: View {
         return Int(Double(journey.todaySteps) / Double(dailyGoal) * 100)
     }
 
+    private var lastNightSleepCard: some View {
+        HStack(alignment: .center, spacing: 16) {
+            ZStack {
+                Circle().stroke(Color.secondary.opacity(0.2), lineWidth: 8)
+                Circle()
+                    .trim(from: 0, to: sleepProgress)
+                    .stroke(Color.indigo, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Text("\(sleepAchievementPercent) %")
+                    .font(.caption).bold()
+            }
+            .frame(width: 56, height: 56)
+
+            VStack(alignment: .leading, spacing: 4) {
+                if let m = sleep.lastNightMinutes {
+                    Text(String(format: "%.1f h", Double(m) / 60.0))
+                        .font(.title3).bold()
+                    Text(String(format: "目標 %.1f h", sleepTargetHours))
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text("昨夜の記録なし").font(.title3)
+                    Text("HealthKit から取得後に表示")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var sleepProgress: Double {
+        guard let m = sleep.lastNightMinutes, sleepTargetHours > 0 else { return 0 }
+        let target = sleepTargetHours * 60.0
+        return min(1.0, Double(m) / target)
+    }
+
+    private var sleepAchievementPercent: Int {
+        guard let m = sleep.lastNightMinutes, sleepTargetHours > 0 else { return 0 }
+        let target = sleepTargetHours * 60.0
+        return Int((Double(m) / target * 100).rounded())
+    }
+
     private var weekSessions: [WorkoutSession] {
         let cal = Calendar.current
         let start = cal.date(byAdding: .day, value: -7, to: Date()) ?? Date()
@@ -132,9 +180,14 @@ struct SummaryTile: View {
     HomeView()
         .modelContainer(for: [
             WorkoutSession.self, SetRecord.self, Exercise.self, BodyMetric.self,
-            StepDailyRecord.self, CheckpointAchievement.self
+            StepDailyRecord.self, CheckpointAchievement.self,
+            SleepDailyRecord.self
         ], inMemory: true)
         .environment(JourneyService(
+            healthKit: LiveHealthKitService(),
+            container: ModelContainerFactory.makeShared()
+        ))
+        .environment(SleepService(
             healthKit: LiveHealthKitService(),
             container: ModelContainerFactory.makeShared()
         ))
