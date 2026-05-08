@@ -10,15 +10,10 @@ struct WorkoutTrackerApp: App {
     init() {
         let c = ModelContainerFactory.makeShared()
         self.container = c
-        let svc = JourneyService(
-            healthKit: LiveHealthKitService(),
-            container: c
-        )
+        let healthKit = LiveHealthKitService()
+        let svc = JourneyService(healthKit: healthKit, container: c)
         self._journey = State(initialValue: svc)
-        let sleepSvc = SleepService(
-            healthKit: LiveHealthKitService(),
-            container: c
-        )
+        let sleepSvc = SleepService(healthKit: healthKit, container: c)
         self._sleep = State(initialValue: sleepSvc)
 
         Task { @MainActor [container = c] in
