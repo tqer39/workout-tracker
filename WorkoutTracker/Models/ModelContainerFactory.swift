@@ -11,6 +11,8 @@ enum ModelContainerFactory {
             WorkoutSession.self,
             SetRecord.self,
             BodyMetric.self,
+            StepDailyRecord.self,
+            CheckpointAchievement.self,
         ])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
