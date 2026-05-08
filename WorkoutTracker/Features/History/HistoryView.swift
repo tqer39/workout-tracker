@@ -37,6 +37,11 @@ struct HistoryView: View {
 #Preview {
     HistoryView()
         .modelContainer(for: [
-            WorkoutSession.self, SetRecord.self, Exercise.self, BodyMetric.self
+            WorkoutSession.self, SetRecord.self, Exercise.self, BodyMetric.self,
+            SleepDailyRecord.self
         ], inMemory: true)
+        .environment(SleepService(
+            healthKit: LiveHealthKitService(),
+            container: ModelContainerFactory.makeShared()
+        ))
 }

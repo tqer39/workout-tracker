@@ -75,15 +75,15 @@ struct SleepHistoryView: View {
         SleepStreak.currentStreak(records: records, targetMinutes: targetMinutes)
     }
 
-    private func dailyVolume(for day: Date) -> Double {
+    private var volumeByDay: [Date: Double] {
         let cal = Calendar.current
-        let dayStart = cal.startOfDay(for: day)
-        let dayEnd = cal.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
-        let sets = sessions
-            .filter { $0.startedAt >= dayStart && $0.startedAt < dayEnd }
-            .flatMap(\.sets)
-            .map { WorkoutMetrics.SetInput(weightKg: $0.weightKg, reps: $0.reps) }
-        return WorkoutMetrics.totalVolume(sets: sets)
+        var result: [Date: Double] = [:]
+        for s in sessions {
+            let key = cal.startOfDay(for: s.startedAt)
+            let sets = s.sets.map { WorkoutMetrics.SetInput(weightKg: $0.weightKg, reps: $0.reps) }
+            result[key, default: 0] += WorkoutMetrics.totalVolume(sets: sets)
+        }
+        return result
     }
 
     private var summary: some View {
@@ -107,7 +107,9 @@ struct SleepHistoryView: View {
     }
 
     private var chart: some View {
-        Chart {
+        let volumes = volumeByDay
+        let cal = Calendar.current
+        return Chart {
             ForEach(rangeRecords, id: \.dayStart) { r in
                 BarMark(
                     x: .value("日付", r.dayStart, unit: .day),
@@ -121,7 +123,7 @@ struct SleepHistoryView: View {
             ForEach(rangeRecords, id: \.dayStart) { r in
                 LineMark(
                     x: .value("日付", r.dayStart, unit: .day),
-                    y: .value("ボリューム", dailyVolume(for: r.dayStart))
+                    y: .value("ボリューム", volumes[cal.startOfDay(for: r.dayStart)] ?? 0)
                 )
                 .foregroundStyle(Color.blue)
                 .interpolationMethod(.monotone)
@@ -138,7 +140,9 @@ struct SleepHistoryView: View {
     }
 
     private var list: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let volumes = volumeByDay
+        let cal = Calendar.current
+        return VStack(alignment: .leading, spacing: 0) {
             ForEach(rangeRecords.reversed(), id: \.dayStart) { r in
                 HStack {
                     Text(r.dayStart, format: .dateTime.month().day())
@@ -149,7 +153,7 @@ struct SleepHistoryView: View {
                             ? .green : .orange
                         )
                     Spacer()
-                    let vol = dailyVolume(for: r.dayStart)
+                    let vol = volumes[cal.startOfDay(for: r.dayStart)] ?? 0
                     Text(vol > 0 ? "vol \(Int(vol.rounded())) kg" : "vol --")
                         .font(.caption)
                         .foregroundStyle(.secondary)
