@@ -55,6 +55,29 @@ final class HealthKitServiceTests: XCTestCase {
         stub.triggerObserver()
         XCTAssertEqual(received, 1234)
     }
+
+    func test_stub_fetchSleep_returns_injected_values() async throws {
+        let day = Calendar.current.startOfDay(for: Date())
+        let stub = StubHealthKitService(
+            latest: nil, range: [],
+            sleepData: [.init(dayStart: day, totalMinutes: 432, source: .healthKit)]
+        )
+        let result = try await stub.fetchSleep(from: day, to: day)
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.totalMinutes, 432)
+    }
+
+    func test_stub_requestSleepAuthorization_throws_on_denied() async throws {
+        let stub = StubHealthKitService(
+            latest: nil, range: [], authorizationError: HealthKitError.denied
+        )
+        do {
+            try await stub.requestSleepAuthorization()
+            XCTFail("denied を投げるべき")
+        } catch HealthKitError.denied {
+            // OK
+        }
+    }
 }
 
 final class StubHealthKitService: HealthKitService {
@@ -63,6 +86,7 @@ final class StubHealthKitService: HealthKitService {
     let authorizationError: Error?
     var todaySteps: Int
     var dailySteps: [StepDailyDTO]
+    var sleepData: [SleepDailyDTO]
 
     private var observerHandler: ((Int) -> Void)?
 
@@ -71,13 +95,15 @@ final class StubHealthKitService: HealthKitService {
         range: [BodyMetricDTO],
         authorizationError: Error? = nil,
         todaySteps: Int = 0,
-        dailySteps: [StepDailyDTO] = []
+        dailySteps: [StepDailyDTO] = [],
+        sleepData: [SleepDailyDTO] = []
     ) {
         self.latest = latest
         self.range = range
         self.authorizationError = authorizationError
         self.todaySteps = todaySteps
         self.dailySteps = dailySteps
+        self.sleepData = sleepData
     }
 
     func requestAuthorization() async throws {
@@ -95,6 +121,11 @@ final class StubHealthKitService: HealthKitService {
         observerHandler = handler
     }
     func stopObservingTodaySteps() { observerHandler = nil }
+
+    func requestSleepAuthorization() async throws {
+        if let authorizationError { throw authorizationError }
+    }
+    func fetchSleep(from: Date, to: Date) async throws -> [SleepDailyDTO] { sleepData }
 
     func triggerObserver() { observerHandler?(todaySteps) }
 }
