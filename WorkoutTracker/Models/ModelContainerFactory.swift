@@ -13,6 +13,7 @@ enum ModelContainerFactory {
             BodyMetric.self,
             StepDailyRecord.self,
             CheckpointAchievement.self,
+            SleepDailyRecord.self,
         ])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {

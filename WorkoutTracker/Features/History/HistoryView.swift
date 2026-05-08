@@ -6,6 +6,7 @@ struct HistoryView: View {
         case sessions = "セッション"
         case charts = "グラフ"
         case body = "体組成"
+        case sleep = "睡眠"
         var id: String { rawValue }
     }
 
@@ -25,6 +26,7 @@ struct HistoryView: View {
                 case .sessions: SessionsListView()
                 case .charts: ExerciseChartsView()
                 case .body: BodyCompositionView()
+                case .sleep: SleepHistoryView()
                 }
             }
             .navigationTitle("履歴")
@@ -35,6 +37,11 @@ struct HistoryView: View {
 #Preview {
     HistoryView()
         .modelContainer(for: [
-            WorkoutSession.self, SetRecord.self, Exercise.self, BodyMetric.self
+            WorkoutSession.self, SetRecord.self, Exercise.self, BodyMetric.self,
+            SleepDailyRecord.self
         ], inMemory: true)
+        .environment(SleepService(
+            healthKit: LiveHealthKitService(),
+            container: ModelContainerFactory.makeShared()
+        ))
 }
