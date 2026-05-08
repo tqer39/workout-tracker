@@ -8,6 +8,7 @@ final class JourneyService {
     var todaySteps: Int = 0
     var progress: JourneyProgress = .empty
     var pendingCelebrations: [CheckpointAchievement] = []
+    var currentStreakDays: Int = 0
 
     private let healthKit: HealthKitService
     private let container: ModelContainer
@@ -56,6 +57,7 @@ final class JourneyService {
 
         ensureAchievements(totalSteps: totalSteps)
         refreshPendingCelebrations()
+        recomputeStreak()
     }
 
     func refreshOnAppear() async {
@@ -70,6 +72,7 @@ final class JourneyService {
         progress = JourneyEngine.computeProgress(totalSteps: totalSteps, route: route)
         ensureAchievements(totalSteps: totalSteps)
         refreshPendingCelebrations()
+        recomputeStreak()
     }
 
     func startObserving() {
@@ -85,6 +88,7 @@ final class JourneyService {
                 self.progress = JourneyEngine.computeProgress(totalSteps: total, route: self.route)
                 self.ensureAchievements(totalSteps: total)
                 self.refreshPendingCelebrations()
+                self.recomputeStreak()
             }
         }
     }
@@ -174,6 +178,14 @@ final class JourneyService {
         )
         pendingCelebrations = (try? ctx.fetch(fd)) ?? []
     }
+
+    private func recomputeStreak() {
+        let ctx = container.mainContext
+        let records = (try? ctx.fetch(FetchDescriptor<StepDailyRecord>())) ?? []
+        let rawGoal = UserDefaults.standard.integer(forKey: "walk.dailyGoalSteps")
+        let goal = max(1, rawGoal == 0 ? 8000 : rawGoal)
+        currentStreakDays = StreakCalculator.currentStreak(records: records, dailyGoal: goal)
+    }
 }
 
 #if DEBUG
@@ -201,6 +213,7 @@ extension JourneyService {
         progress = JourneyEngine.computeProgress(totalSteps: total, route: route)
         ensureAchievements(totalSteps: total)
         refreshPendingCelebrations()
+        recomputeStreak()
     }
 }
 #endif

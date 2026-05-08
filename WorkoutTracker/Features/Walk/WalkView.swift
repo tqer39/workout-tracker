@@ -17,6 +17,7 @@ struct WalkView: View {
             todaySteps: journey.todaySteps,
             dailyGoal: dailyGoal,
             timeOfDay: timeOfDay,
+            streakDays: journey.currentStreakDays,
             lastShown: lastCompanionLine
         )
     }
