@@ -6,6 +6,8 @@ struct WalkView: View {
     @State private var lastCompanionLine: String?
     @State private var activeCelebration: CheckpointAchievement?
     @State private var showingHistory: Bool = false
+    @State private var showingBadges: Bool = false
+    @State private var showingSettings: Bool = false
 
     private var timeOfDay: TimeOfDay { .from(Date()) }
 
@@ -57,10 +59,20 @@ struct WalkView: View {
                         Image(systemName: "chart.bar")
                     }
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showingBadges = true } label: {
+                        Image(systemName: "rosette")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
             }
-            .sheet(isPresented: $showingHistory) {
-                StepHistoryView()
-            }
+            .sheet(isPresented: $showingHistory) { StepHistoryView() }
+            .sheet(isPresented: $showingBadges) { BadgesView() }
+            .sheet(isPresented: $showingSettings) { WalkSettingsView() }
             .task {
                 await journey.refreshOnAppear()
                 journey.startObserving()
