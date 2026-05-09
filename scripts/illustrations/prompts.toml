@@ -1,0 +1,76 @@
+[style]
+suffix = "soft watercolor illustration, gentle pastel palette, hand-painted texture, warm and gentle atmosphere, no text, no people, slight paper grain"
+size    = "1024x1024"
+quality = "high"
+
+# === 時間帯背景 (4枚) ===
+
+[scenery.morning]
+prompt = "A peaceful early morning sky over distant blue mountains, faint pink sunrise glow, soft clouds, calm horizon"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/morning.imageset/morning.png"
+
+[scenery.day]
+prompt = "A bright clear daytime sky, gentle white clouds, distant green hills, soft sunlight"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/day.imageset/day.png"
+
+[scenery.evening]
+prompt = "A warm sunset sky with orange and pink hues, silhouette of distant hills, golden light"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/evening.imageset/evening.png"
+
+[scenery.night]
+prompt = "A calm night sky with soft moonlight, gentle stars, distant dark blue mountains"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/night.imageset/night.png"
+
+# === チェックポイント挿絵 (13枚) ===
+
+[scenery.tokyo]
+prompt = "Tokyo cityscape with Nihonbashi bridge silhouette and Tokyo Tower in distance, calm morning street view"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/tokyo.imageset/tokyo.png"
+
+[scenery.yokohama]
+prompt = "Yokohama harbor scene with red brick warehouses, gentle sea, distant ships"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/yokohama.imageset/yokohama.png"
+
+[scenery.atami]
+prompt = "Atami seaside hot spring town, gentle hills meeting the ocean, soft mist"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/atami.imageset/atami.png"
+
+[scenery.shizuoka]
+prompt = "Shizuoka tea fields with Mt. Fuji in the background, soft green rows, blue sky"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/shizuoka.imageset/shizuoka.png"
+
+[scenery.hamamatsu]
+prompt = "Hamamatsu Lake Hamana scene with gentle reeds and a small boat, soft horizon"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/hamamatsu.imageset/hamamatsu.png"
+
+[scenery.nagoya]
+prompt = "Nagoya Castle with golden shachihoko silhouette, surrounded by trees, soft sky"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/nagoya.imageset/nagoya.png"
+
+[scenery.kyoto]
+prompt = "Kyoto temple with cherry blossoms, traditional wooden roofs, gentle hills behind"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/kyoto.imageset/kyoto.png"
+
+[scenery.osaka]
+prompt = "Osaka Dotonbori area with traditional storefronts and soft river reflection, twilight"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/osaka.imageset/osaka.png"
+
+[scenery.kobe]
+prompt = "Kobe harbor at dusk with Port Tower silhouette, gentle hills with city lights"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/kobe.imageset/kobe.png"
+
+[scenery.okayama]
+prompt = "Kurashiki Bikan historical district with white-walled buildings and willow trees by canal"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/okayama.imageset/okayama.png"
+
+[scenery.hiroshima]
+prompt = "Itsukushima Shrine torii gate at low tide, soft sea, distant mountains"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/hiroshima.imageset/hiroshima.png"
+
+[scenery.shimonoseki]
+prompt = "Kanmon Strait view with the bridge silhouette, gentle sea, soft sky"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/shimonoseki.imageset/shimonoseki.png"
+
+[scenery.hakata]
+prompt = "Fukuoka Hakata yatai street food stalls along the river at dusk, lanterns glowing softly"
+output = "WorkoutTracker/Resources/Assets.xcassets/Scenery/hakata.imageset/hakata.png"

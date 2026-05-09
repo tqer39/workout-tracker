@@ -40,4 +40,14 @@ final class StepDailyRecordTests: XCTestCase {
         XCTAssertEqual(fetched.count, 1, "dayStart はユニーク制約で 1 件にまとまる")
         XCTAssertEqual(fetched.first?.steps, 200)
     }
+
+    @MainActor
+    func test_stepRecord_representativeFixture_persists() throws {
+        let container = try InMemoryContainer.seeded { ctx in
+            ctx.insert(Fixtures.stepRecord(Fixtures.Steps.representative))
+        }
+        let records = try container.mainContext.fetch(FetchDescriptor<StepDailyRecord>())
+        XCTAssertEqual(records.count, 1)
+        XCTAssertEqual(records.first?.steps, 1234)
+    }
 }
