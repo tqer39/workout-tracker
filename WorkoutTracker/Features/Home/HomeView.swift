@@ -44,15 +44,13 @@ struct HomeView: View {
                     }
                 }
 
-                if let last = sessions.first {
-                    Section("直近のセッション") {
-                        NavigationLink {
-                            SessionDetailView(session: last)
-                        } label: {
-                            VStack(alignment: .leading) {
-                                Text(last.startedAt, style: .date).font(.headline)
-                                Text("\(last.sets.count) セット")
-                                    .font(.caption).foregroundStyle(.secondary)
+                if !recentCompletedSessions.isEmpty {
+                    Section("直近 3 セッション") {
+                        ForEach(recentCompletedSessions) { s in
+                            NavigationLink {
+                                SessionDetailView(session: s)
+                            } label: {
+                                sessionSummaryRow(s)
                             }
                         }
                     }
@@ -208,6 +206,29 @@ struct HomeView: View {
         guard let m = sleep.lastNightMinutes, sleepTargetHours > 0 else { return 0 }
         let target = sleepTargetHours * 60.0
         return Int((Double(m) / target * 100).rounded())
+    }
+
+    private var recentCompletedSessions: [WorkoutSession] {
+        Array(sessions.lazy.filter { $0.endedAt != nil }.prefix(3))
+    }
+
+    private func sessionSummaryRow(_ s: WorkoutSession) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(s.startedAt, style: .date)
+                .font(.headline)
+            Text(sessionSummaryCaption(s))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func sessionSummaryCaption(_ s: WorkoutSession) -> String {
+        let exerciseIDs: [UUID] = s.sets.compactMap { $0.exercise?.id }
+        let exerciseCount = Set(exerciseIDs).count
+        let volume = WorkoutMetrics.totalVolume(
+            sets: s.sets.map { .init(weightKg: $0.weightKg, reps: $0.reps) }
+        )
+        return "\(exerciseCount) 種目 / 総ボリューム \(Int(volume.rounded())) kg"
     }
 
     private var weekSessions: [WorkoutSession] {
