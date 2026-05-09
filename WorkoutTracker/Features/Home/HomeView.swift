@@ -111,6 +111,7 @@ struct HomeView: View {
                 .disabled(hasActiveSession)
                 .opacity(hasActiveSession ? 0.4 : 1.0)
             }
+            .padding(.horizontal, 16)
             .padding(.vertical, 4)
         }
         .listRowInsets(EdgeInsets())
@@ -236,8 +237,7 @@ struct HomeView: View {
     }
 
     private func sessionSummaryCaption(_ s: WorkoutSession) -> String {
-        let exerciseIDs: [UUID] = s.sets.compactMap { $0.exercise?.id }
-        let exerciseCount = Set(exerciseIDs).count
+        let exerciseCount = Set(s.sets.compactMap { $0.exercise?.id }).count
         let volume = WorkoutMetrics.totalVolume(
             sets: s.sets.map { .init(weightKg: $0.weightKg, reps: $0.reps) }
         )
