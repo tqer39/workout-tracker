@@ -23,6 +23,11 @@ enum StepSource: String, Codable {
     case seed
 }
 
+enum SleepSource: String, Codable {
+    case healthKit
+    case seed
+}
+
 enum TimeOfDay: String, CaseIterable {
     case morning, day, evening, night
 

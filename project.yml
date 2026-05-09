@@ -30,7 +30,7 @@ targets:
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
-        NSHealthShareUsageDescription: 体重・体脂肪率・歩数の推移をアプリに取り込みます。
+        NSHealthShareUsageDescription: 体重・体脂肪率・歩数・睡眠の推移をアプリに取り込みます。
         NSHealthUpdateUsageDescription: 体重・体脂肪率をヘルスケアへ保存します。
     settings:
       base:

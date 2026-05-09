@@ -5,15 +5,18 @@ final class StubHealthKitService: HealthKitService {
     var todaySteps: Int
     var dailySteps: [StepDailyDTO]
     var bodyMetrics: [BodyMetricDTO]
+    var sleepDtos: [SleepDailyDTO]
 
     init(
         todaySteps: Int = 5_400,
         dailySteps: [StepDailyDTO] = StubHealthKitService.defaultDailySteps(),
-        bodyMetrics: [BodyMetricDTO] = []
+        bodyMetrics: [BodyMetricDTO] = [],
+        sleepDtos: [SleepDailyDTO] = StubHealthKitService.defaultSleep()
     ) {
         self.todaySteps = todaySteps
         self.dailySteps = dailySteps
         self.bodyMetrics = bodyMetrics
+        self.sleepDtos = sleepDtos
     }
 
     func requestAuthorization() async throws {}
@@ -35,6 +38,14 @@ final class StubHealthKitService: HealthKitService {
     }
     func stopObservingTodaySteps() {}
 
+    func requestSleepAuthorization() async throws {}
+    func fetchSleep(from: Date, to: Date) async throws -> [SleepDailyDTO] {
+        let cal = Calendar.current
+        let fromDay = cal.startOfDay(for: from)
+        let toDay = cal.startOfDay(for: to)
+        return sleepDtos.filter { $0.dayStart >= fromDay && $0.dayStart <= toDay }
+    }
+
     private static func defaultDailySteps() -> [StepDailyDTO] {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
@@ -42,6 +53,16 @@ final class StubHealthKitService: HealthKitService {
         return counts.enumerated().map { offset, steps in
             let day = cal.date(byAdding: .day, value: -(counts.count - 1 - offset), to: today) ?? today
             return StepDailyDTO(dayStart: day, steps: steps, source: .seed)
+        }
+    }
+
+    private static func defaultSleep() -> [SleepDailyDTO] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let minutes = [380, 420, 450, 410, 470, 360, 430]
+        return minutes.enumerated().map { offset, m in
+            let day = cal.date(byAdding: .day, value: -(minutes.count - 1 - offset), to: today) ?? today
+            return SleepDailyDTO(dayStart: day, totalMinutes: m, source: .seed)
         }
     }
 }

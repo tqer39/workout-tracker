@@ -29,6 +29,8 @@ protocol HealthKitService {
     func fetchDailySteps(from: Date, to: Date) async throws -> [StepDailyDTO]
     func startObservingTodaySteps(_ handler: @escaping (Int) -> Void)
     func stopObservingTodaySteps()
+    func requestSleepAuthorization() async throws
+    func fetchSleep(from: Date, to: Date) async throws -> [SleepDailyDTO]
 }
 
 final class LiveHealthKitService: HealthKitService {
@@ -36,6 +38,7 @@ final class LiveHealthKitService: HealthKitService {
     private let weightType = HKQuantityType(.bodyMass)
     private let fatType = HKQuantityType(.bodyFatPercentage)
     private let stepType = HKQuantityType(.stepCount)
+    private let sleepType = HKCategoryType(.sleepAnalysis)
 
     private var observerQuery: HKObserverQuery?
 
@@ -141,6 +144,39 @@ final class LiveHealthKitService: HealthKitService {
     func stopObservingTodaySteps() {
         if let q = observerQuery { store.stop(q) }
         observerQuery = nil
+    }
+
+    func requestSleepAuthorization() async throws {
+        guard HKHealthStore.isHealthDataAvailable() else { throw HealthKitError.unavailable }
+        try await store.requestAuthorization(toShare: [], read: [sleepType])
+    }
+
+    func fetchSleep(from: Date, to: Date) async throws -> [SleepDailyDTO] {
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: from)
+        let end = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: to)) ?? to
+        let raw: [SleepSample] = try await withCheckedThrowingContinuation { cont in
+            let predicate = HKQuery.predicateForSamples(withStart: start, end: end)
+            let q = HKSampleQuery(
+                sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: true)]
+            ) { _, samples, error in
+                if let error { cont.resume(throwing: error); return }
+                let mapped = (samples ?? []).compactMap { $0 as? HKCategorySample }.map { s -> SleepSample in
+                    let asleep: Bool
+                    switch HKCategoryValueSleepAnalysis(rawValue: s.value) {
+                    case .asleepUnspecified, .asleepCore, .asleepREM, .asleepDeep:
+                        asleep = true
+                    default:
+                        asleep = false
+                    }
+                    return SleepSample(startDate: s.startDate, endDate: s.endDate, isAsleep: asleep)
+                }
+                cont.resume(returning: mapped)
+            }
+            store.execute(q)
+        }
+        return SleepAggregator.aggregate(samples: raw)
     }
 
     private struct Sample { let value: Double; let date: Date }

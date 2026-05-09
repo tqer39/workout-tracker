@@ -4,7 +4,9 @@ import SwiftData
 struct HomeView: View {
     @Binding var tabSelection: AppTab
     @Environment(JourneyService.self) private var journey
+    @Environment(SleepService.self) private var sleep
     @AppStorage("walk.dailyGoalSteps") private var dailyGoal: Int = 8000
+    @AppStorage("sleep.targetHours") private var sleepTargetHours: Double = 7.0
 
     @Query(sort: [SortDescriptor(\WorkoutSession.startedAt, order: .reverse)])
     private var sessions: [WorkoutSession]
@@ -16,18 +18,17 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 20) {
-                    // 歩くこと（Step1）を主役に置く
                     StepHeroCard(
                         todaySteps: journey.todaySteps,
                         dailyGoal: dailyGoal,
                         streakDays: journey.currentStreakDays
                     )
 
-                    // 旅は動機づけ：タップで walk タブへ
                     JourneyMiniCard(progress: journey.progress) {
                         tabSelection = .walk
                     }
 
+                    sleepSection
                     weeklySummarySection
 
                     if let last = sessions.first {
@@ -43,6 +44,43 @@ struct HomeView: View {
                 .padding(.bottom, 24)
             }
             .navigationTitle("ホーム")
+        }
+    }
+
+    private var sleepSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("昨夜の睡眠").font(.headline)
+            HStack(alignment: .center, spacing: 16) {
+                ZStack {
+                    Circle().stroke(Color.secondary.opacity(0.2), lineWidth: 8)
+                    Circle()
+                        .trim(from: 0, to: sleepProgress)
+                        .stroke(Color.indigo, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    Text("\(sleepAchievementPercent) %")
+                        .font(.caption).bold()
+                }
+                .frame(width: 56, height: 56)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    if let m = sleep.lastNightMinutes {
+                        Text(String(format: "%.1f h", Double(m) / 60.0))
+                            .font(.title3.bold())
+                        Text(String(format: "目標 %.1f h", sleepTargetHours))
+                            .font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Text("昨夜の記録なし").font(.subheadline)
+                        Text("HealthKit から取得後に表示")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+            )
         }
     }
 
@@ -109,6 +147,18 @@ struct HomeView: View {
         }
     }
 
+    private var sleepProgress: Double {
+        guard let m = sleep.lastNightMinutes, sleepTargetHours > 0 else { return 0 }
+        let target = sleepTargetHours * 60.0
+        return min(1.0, Double(m) / target)
+    }
+
+    private var sleepAchievementPercent: Int {
+        guard let m = sleep.lastNightMinutes, sleepTargetHours > 0 else { return 0 }
+        let target = sleepTargetHours * 60.0
+        return Int((Double(m) / target * 100).rounded())
+    }
+
     private var weekSessions: [WorkoutSession] {
         let cal = Calendar.current
         let start = cal.date(byAdding: .day, value: -7, to: Date()) ?? Date()
@@ -144,7 +194,12 @@ struct SummaryTile: View {
     HomeView(tabSelection: .constant(.home))
         .modelContainer(for: [
             WorkoutSession.self, SetRecord.self, Exercise.self, BodyMetric.self,
-            StepDailyRecord.self, CheckpointAchievement.self
+            StepDailyRecord.self, CheckpointAchievement.self,
+            SleepDailyRecord.self
         ], inMemory: true)
         .environment(JourneyService.preview())
+        .environment(SleepService(
+            healthKit: StubHealthKitService(),
+            container: PreviewModelContainer.make()
+        ))
 }
