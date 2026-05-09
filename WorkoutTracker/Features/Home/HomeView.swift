@@ -4,8 +4,12 @@ import SwiftData
 struct HomeView: View {
     @Environment(JourneyService.self) private var journey
     @Environment(SleepService.self) private var sleep
+    @Environment(AppRouter.self) private var router
     @AppStorage("walk.dailyGoalSteps") private var dailyGoal: Int = 8000
     @AppStorage("sleep.targetHours") private var sleepTargetHours: Double = 7.0
+
+    @Query(sort: [SortDescriptor(\WorkoutTemplate.order), SortDescriptor(\WorkoutTemplate.name)])
+    private var templates: [WorkoutTemplate]
 
     @Query(sort: [SortDescriptor(\WorkoutSession.startedAt, order: .reverse)])
     private var sessions: [WorkoutSession]
@@ -13,9 +17,17 @@ struct HomeView: View {
     @Query(sort: [SortDescriptor(\BodyMetric.recordedAt, order: .reverse)])
     private var metrics: [BodyMetric]
 
+    private var hasActiveSession: Bool {
+        sessions.contains { $0.endedAt == nil }
+    }
+
     var body: some View {
         NavigationStack {
             List {
+                Section("ワークアウト開始") {
+                    workoutStartScroller
+                }
+
                 Section("今日の歩数") {
                     todayWalkCard
                 }
@@ -64,6 +76,60 @@ struct HomeView: View {
             }
             .navigationTitle("ホーム")
         }
+    }
+
+    private var workoutStartScroller: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: 12) {
+                ForEach(templates) { t in
+                    Button {
+                        router.requestStart(template: t.id)
+                    } label: {
+                        templateCard(t)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(hasActiveSession)
+                    .opacity(hasActiveSession ? 0.4 : 1.0)
+                }
+                Button {
+                    router.requestStartEmpty()
+                } label: {
+                    emptySessionCard
+                }
+                .buttonStyle(.plain)
+                .disabled(hasActiveSession)
+                .opacity(hasActiveSession ? 0.4 : 1.0)
+            }
+            .padding(.vertical, 4)
+        }
+        .listRowInsets(EdgeInsets())
+    }
+
+    private func templateCard(_ t: WorkoutTemplate) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(t.name)
+                .font(.headline)
+                .lineLimit(2)
+            Spacer()
+            Text("\(t.exercises.count) 種目")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(12)
+        .frame(width: 160, height: 96, alignment: .topLeading)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var emptySessionCard: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "plus.circle.fill")
+                .font(.title)
+                .foregroundStyle(.tint)
+            Text("空セッション")
+                .font(.headline)
+        }
+        .frame(width: 160, height: 96)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
 
     private var todayWalkCard: some View {
@@ -181,7 +247,8 @@ struct SummaryTile: View {
         .modelContainer(for: [
             WorkoutSession.self, SetRecord.self, Exercise.self, BodyMetric.self,
             StepDailyRecord.self, CheckpointAchievement.self,
-            SleepDailyRecord.self
+            SleepDailyRecord.self,
+            WorkoutTemplate.self, TemplateExercise.self
         ], inMemory: true)
         .environment(JourneyService(
             healthKit: LiveHealthKitService(),
@@ -191,4 +258,5 @@ struct SummaryTile: View {
             healthKit: LiveHealthKitService(),
             container: ModelContainerFactory.makeShared()
         ))
+        .environment(AppRouter())
 }
