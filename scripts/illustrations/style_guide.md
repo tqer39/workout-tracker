@@ -7,7 +7,7 @@
 
 ## prompts.toml の `[style].suffix` で全件に付加する文言
 
-```
+```text
 soft watercolor illustration, gentle pastel palette, hand-painted texture,
 warm and gentle atmosphere, no text, no people, slight paper grain
 ```

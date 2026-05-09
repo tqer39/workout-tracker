@@ -17,6 +17,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parents[1]
 PROMPTS_FILE = SCRIPT_DIR / "prompts.toml"
 CACHE_DIR = SCRIPT_DIR / ".cache"
+MODEL = "gpt-image-1"
 
 
 @dataclass
@@ -26,6 +27,7 @@ class IllustrationSpec:
     output: Path
     size: str
     quality: str
+    model: str
 
     @property
     def cache_key(self) -> str:
@@ -33,6 +35,7 @@ class IllustrationSpec:
         h.update(self.prompt.encode("utf-8"))
         h.update(self.size.encode("utf-8"))
         h.update(self.quality.encode("utf-8"))
+        h.update(self.model.encode("utf-8"))
         return h.hexdigest()[:16]
 
     @property
@@ -59,6 +62,7 @@ def load_specs() -> list[IllustrationSpec]:
             output=output,
             size=size,
             quality=quality,
+            model=MODEL,
         ))
     return specs
 
@@ -67,6 +71,13 @@ def filter_specs(specs: list[IllustrationSpec], names: list[str] | None) -> list
     if not names:
         return specs
     keep = set(names)
+    available = {s.name for s in specs}
+    unknown = sorted(keep - available)
+    if unknown:
+        raise SystemExit(
+            f"ERROR: --filter で未知の name: {', '.join(unknown)}\n"
+            f"  利用可能: {', '.join(sorted(available))}"
+        )
     return [s for s in specs if s.name in keep]
 
 
@@ -99,7 +110,7 @@ def generate_one(spec: IllustrationSpec, *, force: bool, dry_run: bool) -> str:
 
     print(f"[generate] {spec.name}...")
     result = client.images.generate(
-        model="gpt-image-1",
+        model=spec.model,
         prompt=spec.prompt,
         size=spec.size,
         quality=spec.quality,

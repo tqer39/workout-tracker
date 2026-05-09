@@ -87,16 +87,18 @@ struct JourneyMiniCard: View {
         }
     }
 
-    // GeometryReader は Button 内でレイアウトが不安定になることがあるため固定幅で実装
     private var progressBar: some View {
-        ZStack(alignment: .leading) {
-            Capsule()
-                .fill(Color.secondary.opacity(0.18))
-            Capsule()
-                .fill(progress.isCompleted ? Color.green : Color.orange)
-                .frame(width: 200 * progress.progressRatio)
+        GeometryReader { geo in
+            let ratio = min(max(progress.progressRatio, 0), 1)
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.secondary.opacity(0.18))
+                Capsule()
+                    .fill(progress.isCompleted ? Color.green : Color.orange)
+                    .frame(width: geo.size.width * ratio)
+            }
         }
-        .frame(width: 200, height: 4)
+        .frame(height: 4)
     }
 
     private var kmToNext: String {
