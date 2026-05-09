@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Charts
 
 struct HomeView: View {
     @Environment(JourneyService.self) private var journey
@@ -53,6 +54,18 @@ struct HomeView: View {
                                 sessionSummaryRow(s)
                             }
                         }
+                    }
+                }
+
+                if !weightSparklinePoints.isEmpty {
+                    Section("体重トレンド") {
+                        weightSparklineView
+                    }
+                } else {
+                    Section("体重トレンド") {
+                        Text("データなし")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -229,6 +242,70 @@ struct HomeView: View {
             sets: s.sets.map { .init(weightKg: $0.weightKg, reps: $0.reps) }
         )
         return "\(exerciseCount) 種目 / 総ボリューム \(Int(volume.rounded())) kg"
+    }
+
+    private struct WeightPoint: Identifiable {
+        let id: Date
+        let date: Date
+        let weight: Double
+    }
+
+    private var weightSparklinePoints: [WeightPoint] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let from = cal.date(byAdding: .day, value: -29, to: today) ?? today
+
+        var byDay: [Date: BodyMetric] = [:]
+        for m in metrics {
+            guard let _ = m.weightKg else { continue }
+            let day = cal.startOfDay(for: m.recordedAt)
+            guard day >= from && day <= today else { continue }
+            if let existing = byDay[day] {
+                if existing.source == .manual { continue }
+                if m.source == .manual { byDay[day] = m; continue }
+                if m.recordedAt > existing.recordedAt { byDay[day] = m }
+            } else {
+                byDay[day] = m
+            }
+        }
+
+        return byDay
+            .compactMap { (day, metric) -> WeightPoint? in
+                guard let w = metric.weightKg else { return nil }
+                return WeightPoint(id: day, date: day, weight: w)
+            }
+            .sorted(by: { $0.date < $1.date })
+    }
+
+    @ViewBuilder
+    private var weightSparklineView: some View {
+        if weightSparklinePoints.count == 1, let only = weightSparklinePoints.first {
+            HStack {
+                Text(String(format: "%.1f kg", only.weight))
+                    .font(.headline)
+                Spacer()
+                Text("（30 日中 1 件）")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } else {
+            Chart {
+                ForEach(weightSparklinePoints) { p in
+                    LineMark(
+                        x: .value("date", p.date),
+                        y: .value("kg", p.weight)
+                    )
+                    AreaMark(
+                        x: .value("date", p.date),
+                        y: .value("kg", p.weight)
+                    )
+                    .foregroundStyle(.tint.opacity(0.15))
+                }
+            }
+            .chartXAxis(.hidden)
+            .chartYAxis(.hidden)
+            .frame(height: 36)
+        }
     }
 
     private var weekSessions: [WorkoutSession] {
