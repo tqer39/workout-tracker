@@ -1,11 +1,12 @@
 import SwiftUI
 
 struct RootView: View {
-    @State private var selectedTab: AppTab = .home
+    @Environment(AppRouter.self) private var router
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            HomeView(tabSelection: $selectedTab)
+        @Bindable var router = router
+        TabView(selection: $router.selectedTab) {
+            HomeView(tabSelection: $router.selectedTab)
                 .tabItem { Label("ホーム", systemImage: "house") }
                 .tag(AppTab.home)
             RecordingView()
@@ -24,4 +25,7 @@ struct RootView: View {
     }
 }
 
-#Preview { RootView() }
+#Preview {
+    RootView()
+        .environment(AppRouter())
+}

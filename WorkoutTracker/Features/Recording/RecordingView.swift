@@ -4,6 +4,7 @@ import SwiftData
 struct RecordingView: View {
     @Environment(\.modelContext) private var ctx
     @Environment(SleepService.self) private var sleep
+    @Environment(AppRouter.self) private var router
     @State private var vm = RecordingViewModel()
     @Query(sort: [SortDescriptor(\WorkoutTemplate.order), SortDescriptor(\WorkoutTemplate.name)])
     private var templates: [WorkoutTemplate]
@@ -25,6 +26,10 @@ struct RecordingView: View {
         .onAppear {
             vm.bind(context: ctx)
             Task { await NotificationService.shared.requestAuthorizationIfNeeded() }
+            handlePendingStartIfNeeded()
+        }
+        .onChange(of: router.pendingStart) { _, _ in
+            handlePendingStartIfNeeded()
         }
     }
 
@@ -69,6 +74,31 @@ struct RecordingView: View {
             }
         }
     }
+
+    private func handlePendingStartIfNeeded() {
+        guard vm.session == nil, let start = router.pendingStart else { return }
+        switch start {
+        case .empty:
+            _ = router.consumePendingStart()
+            vm.startEmptySession()
+        case .template(let id):
+            if let t = resolveTemplate(id: id) {
+                _ = router.consumePendingStart()
+                vm.startSession(from: t)
+            } else {
+                _ = router.consumePendingStart()
+                vm.startEmptySession()
+            }
+        }
+    }
+
+    private func resolveTemplate(id: UUID) -> WorkoutTemplate? {
+        if let t = templates.first(where: { $0.id == id }) { return t }
+        let descriptor = FetchDescriptor<WorkoutTemplate>(
+            predicate: #Predicate { $0.id == id }
+        )
+        return try? ctx.fetch(descriptor).first
+    }
 }
 
 #Preview {
@@ -82,4 +112,5 @@ struct RecordingView: View {
             healthKit: LiveHealthKitService(),
             container: ModelContainerFactory.makeShared()
         ))
+        .environment(AppRouter())
 }
