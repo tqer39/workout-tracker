@@ -55,10 +55,16 @@ final class RecordingViewModel {
 
     func endSession() {
         guard let ctx, let session else { return }
-        session.endedAt = Date()
-        try? ctx.save()
+
         restTimer.cancel()
         NotificationService.shared.cancel(identifier: "rest-\(session.id.uuidString)")
+
+        if session.sets.isEmpty {
+            ctx.delete(session)
+        } else {
+            session.endedAt = Date()
+        }
+        try? ctx.save()
         self.session = nil
     }
 

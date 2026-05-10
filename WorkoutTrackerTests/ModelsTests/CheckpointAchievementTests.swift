@@ -38,4 +38,18 @@ final class CheckpointAchievementTests: XCTestCase {
         let fetched = try ctx.fetch(FetchDescriptor<CheckpointAchievement>())
         XCTAssertEqual(fetched.count, 1)
     }
+
+    @MainActor
+    func test_midJourneyAchievements_persistsInOrder() throws {
+        let container = try InMemoryContainer.seeded { ctx in
+            Fixtures.midJourneyAchievements().forEach { ctx.insert($0) }
+        }
+        let descriptor = FetchDescriptor<CheckpointAchievement>(
+            sortBy: [SortDescriptor(\.achievedAt, order: .forward)]
+        )
+        let achievements = try container.mainContext.fetch(descriptor)
+        XCTAssertEqual(achievements.count, 4)
+        XCTAssertEqual(achievements.first?.checkpointId, "tokyo")
+        XCTAssertEqual(achievements.last?.checkpointId, "shizuoka")
+    }
 }

@@ -20,3 +20,15 @@ enum InMemoryContainer {
         return try ModelContainer(for: schema, configurations: [config])
     }
 }
+
+#if DEBUG
+extension InMemoryContainer {
+    @MainActor
+    static func seeded(_ build: (ModelContext) -> Void) throws -> ModelContainer {
+        let container = try make()
+        build(container.mainContext)
+        try container.mainContext.save()
+        return container
+    }
+}
+#endif

@@ -3,6 +3,7 @@ import SwiftData
 import Charts
 
 struct HomeView: View {
+    @Binding var tabSelection: AppTab
     @Environment(JourneyService.self) private var journey
     @Environment(SleepService.self) private var sleep
     @Environment(AppRouter.self) private var router
@@ -24,97 +25,67 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section("ワークアウト開始") {
-                    workoutStartScroller
-                }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 20) {
+                    StepHeroCard(
+                        todaySteps: journey.todaySteps,
+                        dailyGoal: dailyGoal,
+                        streakDays: journey.currentStreakDays
+                    )
 
-                Section("今日の歩数") {
-                    todayWalkCard
-                }
+                    JourneyMiniCard(progress: journey.progress) {
+                        tabSelection = .walk
+                    }
 
-                Section("昨夜の睡眠") {
-                    lastNightSleepCard
-                }
+                    workoutStartSection
+                    sleepSection
+                    weeklySummarySection
 
-                Section("今週のサマリ") {
-                    HStack {
-                        SummaryTile(title: "セッション", value: "\(weekSessions.count)")
-                        SummaryTile(title: "総ボリューム", value: "\(Int(weekVolume.rounded())) kg")
-                        SummaryTile(title: "セット", value: "\(weekSets)")
+                    if !recentCompletedSessions.isEmpty {
+                        recentCompletedSessionsSection
+                    }
+
+                    weightTrendSection
+
+                    if let latest = metrics.first {
+                        latestMetricSection(latest)
                     }
                 }
-
-                if !recentCompletedSessions.isEmpty {
-                    Section("直近 3 セッション") {
-                        ForEach(recentCompletedSessions) { s in
-                            NavigationLink {
-                                SessionDetailView(session: s)
-                            } label: {
-                                sessionSummaryRow(s)
-                            }
-                        }
-                    }
-                }
-
-                if !weightSparklinePoints.isEmpty {
-                    Section("体重トレンド") {
-                        weightSparklineView
-                    }
-                } else {
-                    Section("体重トレンド") {
-                        Text("データなし")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                if let latest = metrics.first {
-                    Section("最新の体組成") {
-                        HStack {
-                            if let w = latest.weightKg {
-                                Text("\(String(format: "%.1f", w)) kg").font(.title3)
-                            }
-                            Spacer()
-                            if let f = latest.bodyFatPercent {
-                                Text("\(String(format: "%.1f", f)) %").foregroundStyle(.secondary)
-                            }
-                            Text(latest.recordedAt, style: .date)
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
             }
             .navigationTitle("ホーム")
         }
     }
 
-    private var workoutStartScroller: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 12) {
-                ForEach(templates) { t in
+    private var workoutStartSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("ワークアウト開始").font(.headline)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 12) {
+                    ForEach(templates) { t in
+                        Button {
+                            router.requestStart(template: t.id)
+                        } label: {
+                            templateCard(t)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(hasActiveSession)
+                        .opacity(hasActiveSession ? 0.4 : 1.0)
+                    }
                     Button {
-                        router.requestStart(template: t.id)
+                        router.requestStartEmpty()
                     } label: {
-                        templateCard(t)
+                        emptySessionCard
                     }
                     .buttonStyle(.plain)
                     .disabled(hasActiveSession)
                     .opacity(hasActiveSession ? 0.4 : 1.0)
                 }
-                Button {
-                    router.requestStartEmpty()
-                } label: {
-                    emptySessionCard
-                }
-                .buttonStyle(.plain)
-                .disabled(hasActiveSession)
-                .opacity(hasActiveSession ? 0.4 : 1.0)
+                .padding(.vertical, 4)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 4)
         }
-        .listRowInsets(EdgeInsets())
     }
 
     private func templateCard(_ t: WorkoutTemplate) -> some View {
@@ -144,70 +115,125 @@ struct HomeView: View {
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
 
-    private var todayWalkCard: some View {
-        HStack(alignment: .center, spacing: 16) {
-            ZStack {
-                Circle()
-                    .stroke(Color.secondary.opacity(0.2), lineWidth: 8)
-                Circle()
-                    .trim(from: 0, to: min(1.0, Double(journey.todaySteps) / Double(max(1, dailyGoal))))
-                    .stroke(Color.orange, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                Text("\(achievementPercent) %")
-                    .font(.caption).bold()
-            }
-            .frame(width: 56, height: 56)
+    private var sleepSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("昨夜の睡眠").font(.headline)
+            HStack(alignment: .center, spacing: 16) {
+                ZStack {
+                    Circle().stroke(Color.secondary.opacity(0.2), lineWidth: 8)
+                    Circle()
+                        .trim(from: 0, to: sleepProgress)
+                        .stroke(Color.indigo, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    Text("\(sleepAchievementPercent) %")
+                        .font(.caption).bold()
+                }
+                .frame(width: 56, height: 56)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("\(journey.todaySteps) 歩")
-                    .font(.title3).bold()
-                Text("目標 \(dailyGoal) 歩")
-                    .font(.caption).foregroundStyle(.secondary)
-                if !journey.progress.isCompleted, let next = journey.progress.nextCheckpoint {
-                    Text("旅: \(next.name) まであと \(String(format: "%.1f", journey.progress.metersToNext / 1000.0)) km")
-                        .font(.caption).foregroundStyle(.secondary)
-                } else if journey.progress.isCompleted {
-                    Text("旅: 博多到達！").font(.caption).foregroundStyle(.green)
+                VStack(alignment: .leading, spacing: 4) {
+                    if let m = sleep.lastNightMinutes {
+                        Text(String(format: "%.1f h", Double(m) / 60.0))
+                            .font(.title3.bold())
+                        Text(String(format: "目標 %.1f h", sleepTargetHours))
+                            .font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Text("昨夜の記録なし").font(.subheadline)
+                        Text("HealthKit から取得後に表示")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+            )
+        }
+    }
+
+    private var weeklySummarySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("今週のサマリ").font(.headline)
+            HStack(spacing: 12) {
+                SummaryTile(title: "セッション", value: "\(weekSessions.count)")
+                SummaryTile(title: "総ボリューム", value: "\(Int(weekVolume.rounded())) kg")
+                SummaryTile(title: "セット", value: "\(weekSets)")
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+            )
+        }
+    }
+
+    private var recentCompletedSessionsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("直近 3 セッション").font(.headline)
+            VStack(spacing: 8) {
+                ForEach(recentCompletedSessions) { s in
+                    NavigationLink {
+                        SessionDetailView(session: s)
+                    } label: {
+                        HStack {
+                            sessionSummaryRow(s)
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                        }
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(Color(.secondarySystemBackground))
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            Spacer()
         }
-        .padding(.vertical, 4)
     }
 
-    private var achievementPercent: Int {
-        guard dailyGoal > 0 else { return 0 }
-        return Int(Double(journey.todaySteps) / Double(dailyGoal) * 100)
-    }
-
-    private var lastNightSleepCard: some View {
-        HStack(alignment: .center, spacing: 16) {
-            ZStack {
-                Circle().stroke(Color.secondary.opacity(0.2), lineWidth: 8)
-                Circle()
-                    .trim(from: 0, to: sleepProgress)
-                    .stroke(Color.indigo, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                Text("\(sleepAchievementPercent) %")
-                    .font(.caption).bold()
-            }
-            .frame(width: 56, height: 56)
-
-            VStack(alignment: .leading, spacing: 4) {
-                if let m = sleep.lastNightMinutes {
-                    Text(String(format: "%.1f h", Double(m) / 60.0))
-                        .font(.title3).bold()
-                    Text(String(format: "目標 %.1f h", sleepTargetHours))
-                        .font(.caption).foregroundStyle(.secondary)
+    private var weightTrendSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("体重トレンド").font(.headline)
+            Group {
+                if weightSparklinePoints.isEmpty {
+                    Text("データなし")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
-                    Text("昨夜の記録なし").font(.title3)
-                    Text("HealthKit から取得後に表示")
-                        .font(.caption).foregroundStyle(.secondary)
+                    weightSparklineView
                 }
             }
-            Spacer()
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+            )
         }
-        .padding(.vertical, 4)
+    }
+
+    private func latestMetricSection(_ metric: BodyMetric) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("最新の体組成").font(.headline)
+            HStack {
+                if let w = metric.weightKg {
+                    Text("\(String(format: "%.1f", w)) kg").font(.title3.bold())
+                }
+                Spacer()
+                if let f = metric.bodyFatPercent {
+                    Text("\(String(format: "%.1f", f)) %").foregroundStyle(.secondary)
+                }
+                Text(metric.recordedAt, style: .date)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+            )
+        }
     }
 
     private var sleepProgress: Double {
@@ -333,28 +359,24 @@ struct SummaryTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.title3).bold()
+            Text(value).font(.subheadline.bold())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 4)
     }
 }
 
 #Preview {
-    HomeView()
+    HomeView(tabSelection: .constant(.home))
         .modelContainer(for: [
             WorkoutSession.self, SetRecord.self, Exercise.self, BodyMetric.self,
             StepDailyRecord.self, CheckpointAchievement.self,
             SleepDailyRecord.self,
             WorkoutTemplate.self, TemplateExercise.self
         ], inMemory: true)
-        .environment(JourneyService(
-            healthKit: LiveHealthKitService(),
-            container: ModelContainerFactory.makeShared()
-        ))
+        .environment(JourneyService.preview())
         .environment(SleepService(
-            healthKit: LiveHealthKitService(),
-            container: ModelContainerFactory.makeShared()
+            healthKit: StubHealthKitService(),
+            container: PreviewModelContainer.make()
         ))
         .environment(AppRouter())
 }

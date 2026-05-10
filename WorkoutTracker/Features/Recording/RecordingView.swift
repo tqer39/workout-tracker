@@ -76,17 +76,28 @@ struct RecordingView: View {
     }
 
     private func handlePendingStartIfNeeded() {
-        guard vm.session == nil, let start = router.consumePendingStart() else { return }
+        guard vm.session == nil, let start = router.pendingStart else { return }
         switch start {
         case .empty:
+            _ = router.consumePendingStart()
             vm.startEmptySession()
         case .template(let id):
-            if let t = templates.first(where: { $0.id == id }) {
+            if let t = resolveTemplate(id: id) {
+                _ = router.consumePendingStart()
                 vm.startSession(from: t)
             } else {
+                _ = router.consumePendingStart()
                 vm.startEmptySession()
             }
         }
+    }
+
+    private func resolveTemplate(id: UUID) -> WorkoutTemplate? {
+        if let t = templates.first(where: { $0.id == id }) { return t }
+        let descriptor = FetchDescriptor<WorkoutTemplate>(
+            predicate: #Predicate { $0.id == id }
+        )
+        return try? ctx.fetch(descriptor).first
     }
 }
 

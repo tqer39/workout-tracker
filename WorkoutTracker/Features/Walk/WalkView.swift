@@ -17,6 +17,7 @@ struct WalkView: View {
             todaySteps: journey.todaySteps,
             dailyGoal: dailyGoal,
             timeOfDay: timeOfDay,
+            streakDays: journey.currentStreakDays,
             lastShown: lastCompanionLine
         )
     }
@@ -30,7 +31,7 @@ struct WalkView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                TimeOfDayBackground(timeOfDay: timeOfDay)
+                TimeOfDayScenery(timeOfDay: timeOfDay)
                     .frame(height: 220)
 
                 ScrollView {
@@ -52,7 +53,7 @@ struct WalkView: View {
                     .padding(.bottom, 16)
                 }
             }
-            .navigationTitle("旅")
+            .navigationTitle("歩く")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showingHistory = true } label: {
@@ -103,8 +104,5 @@ struct WalkView: View {
 
 #Preview {
     WalkView()
-        .environment(JourneyService(
-            healthKit: LiveHealthKitService(),
-            container: ModelContainerFactory.makeShared()
-        ))
+        .environment(JourneyService.preview())
 }

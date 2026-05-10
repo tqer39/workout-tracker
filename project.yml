@@ -22,6 +22,7 @@ targets:
       - path: WorkoutTracker
     resources:
       - path: WorkoutTracker/Resources/Assets.xcassets
+      - path: WorkoutTracker/Resources/CompanionLines.json
     info:
       path: WorkoutTracker/Resources/Info.plist
       properties:
